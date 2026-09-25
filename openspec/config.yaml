@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  Tech stack:
+  - Backend API: Python con FastAPI, Pydantic v2, SQLAlchemy 2 y Alembic.
+  - Frontend web: Flask 3 con Jinja2 y HTMX, con renderizado en servidor.
+  - Persistencia: PostgreSQL.
+  - Pruebas: pytest.
+  - El backend y el frontend son aplicaciones separadas.
+  Git workflow:
+  - Cada cambio se desarrolla en una rama `feature/<nombre-del-cambio>`.
+  - No se permiten commits ni push directos a `main`.
+
+rules:
+  proposal:
+    - Include rollback plan
+  specs:
+    - Use Given/When/Then format for scenarios
+  design:
+    - Include sequence diagrams for complex flows
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
