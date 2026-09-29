@@ -70,14 +70,14 @@ correlacionada. Sin dominio todavia.
 
 Dibuja de 1.2 a 1.5 y de 2.1 a 2.4. La rama ya existe desde F0.
 
-- [ ] 1.2 Crear la aplicación Python de backend con FastAPI, Pydantic v2, SQLAlchemy 2 y Alembic, y verificar con `python -c "import fastapi, pydantic, sqlalchemy, alembic"` que sus módulos están disponibles
-- [ ] 1.3 Crear la aplicación Python frontend con Flask 3 y Jinja2, preparar el recurso estático de HTMX y verificar con `python -c "import flask, jinja2"` y una prueba de cliente que la aplicación arranca
-- [ ] 1.4 Configurar Ruff, mypy y pytest en ambos proyectos, y verificar con `ruff check .`, `mypy backend web` y `pytest --collect-only` que las herramientas descubren el código sin errores
-- [ ] 1.5 Configurar una instancia PostgreSQL de pruebas y fixtures de pytest con aislamiento por test, y verificar que una prueba de conexión y una prueba de rollback pasan
-- [ ] 2.1 Implementar en FastAPI el middleware de `X-Request-ID` para generarlo, conservarlo y devolverlo, y verificar con pruebas HTTP que un identificador válido se preserva y uno ausente se genera
-- [ ] 2.2 Implementar logs JSON del backend con los campos permitidos de método, ruta, estado, duración, correlación y usuario, y verificar capturando logs que nunca contengan contraseñas, cookies, tokens, pagos ni cargas QR
-- [ ] 2.3 Implementar errores `application/problem+json` con códigos de negocio estables y validación Pydantic v2, y verificar mediante pruebas de API para 4xx y 5xx que el esquema es consistente
-- [ ] 2.4 Implementar en Flask el mismo identificador de petición, la propagación a FastAPI y los registros JSON equivalentes, y verificar con una prueba que ambos saltos comparten `request_id`
+- [x] 1.2 Crear la aplicación Python de backend con FastAPI, Pydantic v2, SQLAlchemy 2 y Alembic, y verificar con `python -c "import fastapi, pydantic, sqlalchemy, alembic"` que sus módulos están disponibles
+- [x] 1.3 Crear la aplicación Python frontend con Flask 3 y Jinja2, preparar el recurso estático de HTMX y verificar con `python -c "import flask, jinja2"` y una prueba de cliente que la aplicación arranca
+- [x] 1.4 Configurar Ruff, mypy y pytest en ambos proyectos, y verificar con `ruff check .`, `mypy backend web` y `pytest --collect-only` que las herramientas descubren el código sin errores
+- [x] 1.5 Configurar una instancia PostgreSQL de pruebas y fixtures de pytest con aislamiento por test, y verificar que una prueba de conexión y una prueba de rollback pasan
+- [x] 2.1 Implementar en FastAPI el middleware de `X-Request-ID` para generarlo, conservarlo y devolverlo, y verificar con pruebas HTTP que un identificador válido se preserva y uno ausente se genera
+- [x] 2.2 Implementar logs JSON del backend con los campos permitidos de método, ruta, estado, duración, correlación y usuario, y verificar capturando logs que nunca contengan contraseñas, cookies, tokens, pagos ni cargas QR
+- [x] 2.3 Implementar errores `application/problem+json` con códigos de negocio estables y validación Pydantic v2, y verificar mediante pruebas de API para 4xx y 5xx que el esquema es consistente
+- [x] 2.4 Implementar en Flask el mismo identificador de petición, la propagación a FastAPI y los registros JSON equivalentes, y verificar con una prueba que ambos saltos comparten `request_id`
 
 **Demo:** una peticion al navegador contra Flask produce dos lineas JSON, una de
 cada proceso, con el mismo `request_id`; y una peticion sin `X-Request-ID` recibe
@@ -93,14 +93,14 @@ proveedores todavia no existe, asi que el unico camino probado es el de cliente.
 
 Dibuja de 2.5, de 3.1 a 3.7, de 3.9 y de 6.1 a 6.3.
 
-- [ ] 3.1 Configurar el motor SQLAlchemy 2, la sesión por petición y la conexión transaccional a PostgreSQL, y verificar con una prueba de commit y rollback que el estado de la base no se filtra entre requests
-- [ ] 3.2 Implementar `users` y `auth_sessions` con email normalizado único, roles, estados, hash de refresh token, expiración, rotación y revocación, y verificar con pruebas de restricciones e índices
+- [x] 3.1 Configurar el motor SQLAlchemy 2, la sesión por petición y la conexión transaccional a PostgreSQL, y verificar con una prueba de commit y rollback que el estado de la base no se filtra entre requests
+- [x] 3.2 Implementar `users` y `auth_sessions` con email normalizado único, roles, estados, hash de refresh token, expiración, rotación y revocación, y verificar con pruebas de restricciones e índices
 - [ ] 3.3 Crear la revisión inicial de Alembic para identidad y verificar con `alembic upgrade head` y `alembic downgrade base` sobre una base PostgreSQL vacía
 - [ ] 3.4 Implementar registro público, normalización de email y hash Argon2id, y verificar con pruebas que un cliente queda activo, un proveedor queda pendiente y un rol no permitido se rechaza
 - [ ] 3.5 Implementar JWT Ed25519 de corta duración y refresh tokens opacos almacenados como hash con rotación y detección de reutilización, y verificar con pruebas de expiración, renovación, revocación y reutilización
 - [ ] 3.6 Exponer login, refresh y logout bajo `/api/v1/auth`, y verificar mediante pruebas de contrato que solo las cuentas activas emiten tokens y que logout elimina la sesión
 - [ ] 3.7 Implementar dependencias FastAPI para `admin`, `event-owner` y `client` y ownership de recursos, y verificar con pruebas matriz que cada rol y acceso entre recursos quedan permitidos o denegados correctamente
-- [ ] 2.5 Implementar el cliente web agrupado hacia FastAPI, el mapeo de `problem+json` a formularios o fragmentos y el timeout recuperable, y verificar con pruebas del cliente para éxito, 4xx, 5xx y timeout
+- [x] 2.5 Implementar el cliente web agrupado hacia FastAPI, el mapeo de `problem+json` a formularios o fragmentos y el timeout recuperable, y verificar con pruebas del cliente para éxito, 4xx, 5xx y timeout
 - [ ] 6.1 Configurar Flask con Blueprints, plantillas Jinja2, HTMX y un almacén de sesiones del lado servidor aislado del esquema de dominio, y verificar que el navegador solo recibe un identificador opaco en cookie `HttpOnly`, `Secure` y `SameSite`
 - [ ] 6.2 Implementar layout base, navegación por rol, cierre de sesión y protección de vistas, y verificar con pruebas Flask que cada rol ve sus enlaces y una vista ajena devuelve acceso denegado
 - [ ] 6.3 Implementar formularios web de registro, login, logout y renovación de sesión mediante la API, y verificar con pruebas de navegador que un cliente accede, un proveedor pendiente no publica y logout elimina las credenciales locales

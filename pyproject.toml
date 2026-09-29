@@ -1,0 +1,44 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv", "backend/alembic/versions", "web/static"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "RUF", "S", "C4", "PTH"]
+ignore = [
+  # Alembic y Flask declaran fixtures por decorador; los fixtures de pytest
+  # devuelven generadores y las anotaciones de sobrescrituraFBT no aplican.
+  "ANN401",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = ["S101"]
+"backend/alembic/*" = ["E402"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+mypy_path = ["backend", "web"]
+# Las pruebas viven dentro de cada paquete (`ticket_api.tests`, `ticket_web.tests`)
+# porque con un `tests/` de nivel raiz en los dos proyectos, mypy las resolveria
+# al mismo modulo `tests.*` y `mypy backend web` abortaria con "Duplicate module".
+explicit_package_bases = true
+namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = ["ticket_api.tests.*", "ticket_web.tests.*"]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["backend/ticket_api/tests", "web/ticket_web/tests"]
+pythonpath = ["backend", "web"]
+addopts = "-ra --strict-markers"
+markers = [
+  "concurrency: pruebas que compiten por el mismo inventario (etiqueta -m concurrency)",
+]
+filterwarnings = ["error::DeprecationWarning:ticket_api.*", "error::DeprecationWarning:ticket_web.*"]
