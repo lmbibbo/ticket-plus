@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_formulario.html" import aviso, campo %}
+{% block title %}Iniciar sesion - ticket-plus{% endblock %}
+{% block content %}
+<h1>Iniciar sesion</h1>
+{{ aviso(aviso_texto) }}
+<form method="post" action="{{ url_for('auth.login_enviar') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ campo("email", errores, "Correo electronico", tipo="email", autocomplete="username", valor=correo, required=true) }}
+  {{ campo("password", errores, "Contrasena", tipo="password", autocomplete="current-password", required=true) }}
+  <p><button type="submit">Entrar</button></p>
+</form>
+<p>Todavia no tienes cuenta: <a href="{{ url_for('auth.registro') }}">registrate</a>.</p>
+{% endblock %}

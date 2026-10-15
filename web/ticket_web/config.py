@@ -39,6 +39,17 @@ class Settings(BaseSettings):
         default="INFO",
         description="Nivel minimo que llega a la salida estandar.",
     )
+    secret_key: str = Field(
+        default="dev-secret-key-change-in-prod",
+        description="Clave secreta para sesiones y firmas de Flask.",
+    )
+    session_cookie_secure: bool = Field(
+        default=True,
+        description=(
+            "Establecer `Secure` en la cookie de sesion. Solo se desactiva en"
+            " desarrollo local por HTTP; produccion siempre debe dejarlo activo."
+        ),
+    )
 
 
 @lru_cache(maxsize=1)

@@ -18,6 +18,11 @@ class ErrorCode(StrEnum):
     MALFORMED_REQUEST = "malformed_request"
     NOT_FOUND = "not_found"
     METHOD_NOT_ALLOWED = "method_not_allowed"
+    #: La peticion es valida pero no aplica al estado actual del recurso:
+    #: aprobar un proveedor que ya esta activo, suspender una cuenta dada de
+    #: baja. Es 409 y no 422 porque el problema no son los datos, sino cuando se
+    #: envia la peticion.
+    INVALID_STATE_TRANSITION = "invalid_state_transition"
 
     # Autenticacion y autorizacion
     UNAUTHENTICATED = "unauthenticated"

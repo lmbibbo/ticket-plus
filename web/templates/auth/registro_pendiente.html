@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_formulario.html" import aviso %}
+{% block title %}Cuenta pendiente de aprobacion - ticket-plus{% endblock %}
+{% block content %}
+<h1>Cuenta creada</h1>
+{{ aviso(aviso_texto) }}
+<p>
+  La cuenta de <strong>{{ correo }}</strong> ya existe. No hemos iniciado tu
+  sesion porque publicar eventos requiere una aprobacion que todavia no has
+  recibido.
+</p>
+<p>Puedes volver a esta pagina cuando te aprobemos: entra con tu correo y tu contrasena.</p>
+<p><a href="{{ url_for('auth.login') }}">Ir a iniciar sesion</a></p>
+{% endblock %}

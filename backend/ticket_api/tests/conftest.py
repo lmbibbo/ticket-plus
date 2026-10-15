@@ -7,6 +7,7 @@ el motor, y todas las suites de base de datos dependen de ella.
 
 from __future__ import annotations
 
+import base64
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -36,6 +37,27 @@ SUFIJO_OBLIGATORIO: str = "_test"
 TABLAS_DE_PRUEBA: list[MetaData] = []
 
 
+def clave_efimera() -> str:
+    """Clave Ed25519 nueva en base64, para las pruebas.
+
+    Se genera por prueba y no se lee la del `.env` por dos razones. La clave se
+    genera, para que un fallo no dependa de una clave compartida con otro
+    proceso. Y no se lee, porque una prueba que firma con la clave de
+    desarrollo deja en el fallo cualquier token que se imprima, utilizable contra
+    el entorno real.
+    """
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    clave = Ed25519PrivateKey.generate()
+    der = clave.private_bytes(
+        serialization.Encoding.DER,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    )
+    return base64.b64encode(der).decode()
+
+
 @pytest.fixture
 def settings() -> Settings:
     """Configuracion del backend para las pruebas.
@@ -48,6 +70,7 @@ def settings() -> Settings:
         database_url="postgresql+psycopg://postgres:postgres@localhost:5432/ticketplus_test",
         test_database_url="postgresql+psycopg://postgres:postgres@localhost:5432/ticketplus_test",
         app_name="backend",
+        jwt_private_key_b64=clave_efimera(),
     )
 
 

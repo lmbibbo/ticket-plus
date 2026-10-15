@@ -95,16 +95,16 @@ Dibuja de 2.5, de 3.1 a 3.7, de 3.9 y de 6.1 a 6.3.
 
 - [x] 3.1 Configurar el motor SQLAlchemy 2, la sesión por petición y la conexión transaccional a PostgreSQL, y verificar con una prueba de commit y rollback que el estado de la base no se filtra entre requests
 - [x] 3.2 Implementar `users` y `auth_sessions` con email normalizado único, roles, estados, hash de refresh token, expiración, rotación y revocación, y verificar con pruebas de restricciones e índices
-- [ ] 3.3 Crear la revisión inicial de Alembic para identidad y verificar con `alembic upgrade head` y `alembic downgrade base` sobre una base PostgreSQL vacía
-- [ ] 3.4 Implementar registro público, normalización de email y hash Argon2id, y verificar con pruebas que un cliente queda activo, un proveedor queda pendiente y un rol no permitido se rechaza
-- [ ] 3.5 Implementar JWT Ed25519 de corta duración y refresh tokens opacos almacenados como hash con rotación y detección de reutilización, y verificar con pruebas de expiración, renovación, revocación y reutilización
-- [ ] 3.6 Exponer login, refresh y logout bajo `/api/v1/auth`, y verificar mediante pruebas de contrato que solo las cuentas activas emiten tokens y que logout elimina la sesión
-- [ ] 3.7 Implementar dependencias FastAPI para `admin`, `event-owner` y `client` y ownership de recursos, y verificar con pruebas matriz que cada rol y acceso entre recursos quedan permitidos o denegados correctamente
+- [x] 3.3 Crear la revisión inicial de Alembic para identidad y verificar con `alembic upgrade head` y `alembic downgrade base` sobre una base PostgreSQL vacía
+- [x] 3.4 Implementar registro público, normalización de email y hash Argon2id, y verificar con pruebas que un cliente queda activo, un proveedor queda pendiente y un rol no permitido se rechaza
+- [x] 3.5 Implementar JWT Ed25519 de corta duración y refresh tokens opacos almacenados como hash con rotación y detección de reutilización, y verificar con pruebas de expiración, renovación, revocación y reutilización
+- [x] 3.6 Exponer login, refresh y logout bajo `/api/v1/auth`, y verificar mediante pruebas de contrato que solo las cuentas activas emiten tokens y que logout elimina la sesión
+- [x] 3.7 Implementar dependencias FastAPI para `admin`, `event-owner` y `client` y ownership de recursos, y verificar con pruebas matriz que cada rol y acceso entre recursos quedan permitidos o denegados correctamente
 - [x] 2.5 Implementar el cliente web agrupado hacia FastAPI, el mapeo de `problem+json` a formularios o fragmentos y el timeout recuperable, y verificar con pruebas del cliente para éxito, 4xx, 5xx y timeout
-- [ ] 6.1 Configurar Flask con Blueprints, plantillas Jinja2, HTMX y un almacén de sesiones del lado servidor aislado del esquema de dominio, y verificar que el navegador solo recibe un identificador opaco en cookie `HttpOnly`, `Secure` y `SameSite`
-- [ ] 6.2 Implementar layout base, navegación por rol, cierre de sesión y protección de vistas, y verificar con pruebas Flask que cada rol ve sus enlaces y una vista ajena devuelve acceso denegado
-- [ ] 6.3 Implementar formularios web de registro, login, logout y renovación de sesión mediante la API, y verificar con pruebas de navegador que un cliente accede, un proveedor pendiente no publica y logout elimina las credenciales locales
-- [ ] 3.9 Ejecutar la suite de identidad contra PostgreSQL y verificar que cubre registro, aprobación, autenticación, renovación, revocación, suspensión y autorización sin usar SQLite
+- [x] 6.1 Configurar Flask con Blueprints, plantillas Jinja2, HTMX y un almacén de sesiones del lado servidor aislado del esquema de dominio, y verificar que el navegador solo recibe un identificador opaco en cookie `HttpOnly`, `Secure` y `SameSite`
+- [x] 6.2 Implementar layout base, navegación por rol, cierre de sesión y protección de vistas, y verificar con pruebas Flask que cada rol ve sus enlaces y una vista ajena devuelve acceso denegado
+- [x] 6.3 Implementar formularios web de registro, login, logout y renovación de sesión mediante la API, y verificar con pruebas de navegador que un cliente accede, un proveedor pendiente no publica y logout elimina las credenciales locales
+- [x] 3.9 Ejecutar la suite de identidad contra PostgreSQL y verificar que cubre registro, aprobación, autenticación, renovación, revocación, suspensión y autorización sin usar SQLite
 
 **Demo:** en el navegador, un visitante se registra, inicia sesion y ve su pagina
 de cuenta. Un correo duplicado devuelve un error de campo en el formulario, no un
@@ -121,14 +121,14 @@ zona existe, y su zona ya no se puede borrar.
 
 Dibuja de 3.8, de 4.1 a 4.3, de 5.1, de 6.4 y de 7.2 a 7.3.
 
-- [ ] 3.8 Implementar administración de usuarios para aprobar proveedores y suspender cuentas con revocación inmediata de sesiones, y verificar con pruebas API que las operaciones-no administrativas no cambian estado
-- [ ] 4.1 Implementar modelos, índices y restricciones para `events`, `zones` y `zone_sequences`, y verificar con pruebas de migración y de integridad que un evento no puede repetir zona y una zona tiene una sola secuencia
-- [ ] 5.1 Implementar modelos, índices y restricciones para `orders` y `tickets`, incluida la unicidad `(client_id, idempotency_key)` y `(zone_id, number)`, y verificar las restricciones con pruebas de PostgreSQL
-- [ ] 4.2 Implementar creación, edición, publicación y retiro de eventos con validación de datos y ownership, y verificar con pruebas de API los estados `draft`, `published` y `retired`
-- [ ] 4.3 Implementar administración de zonas con capacidad y precio decimal no negativo, y verificar que una zona con entradas asignadas no puede eliminarse
-- [ ] 6.4 Implementar tokens CSRF y validación de formularios en servidor para operaciones de cambio de estado, y verificar que una solicitud sin token o con datos inválidos no modifica recursos
-- [ ] 7.2 Implementar la vista de administración de usuarios para aprobar proveedores y suspender cuentas, y verificar que las acciones exigen rol `admin` y reflejan el estado devuelto por la API
-- [ ] 7.3 Implementar vistas de proveedor para crear, editar, publicar y retirar sus eventos y zonas, y verificar que un proveedor no puede operar sobre eventos ajenos
+- [x] 3.8 Implementar administración de usuarios para aprobar proveedores y suspender cuentas con revocación inmediata de sesiones, y verificar con pruebas API que las operaciones-no administrativas no cambian estado
+- [x] 4.1 Implementar modelos, índices y restricciones para `events`, `zones` y `zone_sequences`, y verificar con pruebas de migración y de integridad que un evento no puede repetir zona y una zona tiene una sola secuencia
+- [x] 5.1 Implementar modelos, índices y restricciones para `orders` y `tickets`, incluida la unicidad `(client_id, idempotency_key)` y `(zone_id, number)`, y verificar las restricciones con pruebas de PostgreSQL
+- [x] 4.2 Implementar creación, edición, publicación y retiro de eventos con validación de datos y ownership, y verificar con pruebas de API los estados `draft`, `published` y `retired`
+- [x] 4.3 Implementar administración de zonas con capacidad y precio decimal no negativo, y verificar que una zona con entradas asignadas no puede eliminarse
+- [x] 6.4 Implementar tokens CSRF y validación de formularios en servidor para operaciones de cambio de estado, y verificar que una solicitud sin token o con datos inválidos no modifica recursos
+- [x] 7.2 Implementar la vista de administración de usuarios para aprobar proveedores y suspender cuentas, y verificar que las acciones exigen rol `admin` y reflejan el estado devuelto por la API
+- [x] 7.3 Implementar vistas de proveedor para crear, editar, publicar y retirar sus eventos y zonas, y verificar que un proveedor no puede operar sobre eventos ajenos
 
 **Demo:** un administrador abre la lista de usuarios, aprueba a un proveedor
 pendiente y ese proveedor ya puede entrar. El proveedor crea un evento en `draft`,

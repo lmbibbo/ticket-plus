@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_formulario.html" as f %}
+{% block title %}Mis eventos - ticket-plus{% endblock %}
+{% block content %}
+<h1>Mis eventos</h1>
+{{ f.aviso(aviso_texto) }}
+
+<h2>Crear evento</h2>
+<form method="post" action="{{ url_for('owner.crear') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ f.campo('name', errores, 'Nombre', required=true, valor=form.get('name', '')) }}
+  {{ f.campo_textarea('description', errores, 'Descripcion', valor=form.get('description', '')) }}
+  {{ f.campo('starts_at', errores, 'Inicio', tipo='datetime-local', required=true, valor=form.get('starts_at', '')) }}
+  {{ f.campo('ends_at', errores, 'Fin', tipo='datetime-local', required=true, valor=form.get('ends_at', '')) }}
+  <button type="submit">Crear borrador</button>
+</form>
+
+<h2>Mis eventos</h2>
+{% if eventos %}
+  <ul class="eventos">
+    {% for evento in eventos %}
+    <li>
+      <a href="{{ url_for('owner.detalle', evento_id=evento.id) }}">{{ evento.name }}</a>
+      <span class="estado-{{ evento.status }}">{{ etiquetas.get(evento.status, evento.status) }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>Todavia no tienes eventos. El formulario de arriba crea el primero en borrador.</p>
+{% endif %}
+{% endblock %}

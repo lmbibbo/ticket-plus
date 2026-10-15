@@ -28,7 +28,10 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from ticket_api.db.engine import get_sessionmaker
+#: Reexportado a proposito: es la fabrica que la suite de la web parchea para
+#: atar la API en proceso a su base de pruebas, y el nombre tiene que existir
+#: en este modulo para que el parche y las pruebas directas hablen del mismo.
+from ticket_api.db.engine import get_sessionmaker as get_sessionmaker
 
 
 class UnitOfWork:

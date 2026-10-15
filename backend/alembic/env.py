@@ -16,13 +16,22 @@ from sqlalchemy import engine_from_config, pool
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+# `Base` no conoce ninguna tabla hasta que se importa un modelo. Sin este
+# import, `target_metadata` queda vacio y `autogenerate` propone una migracion
+# que no crea nada, que es el fallo mas silencioso que tiene Alembic.
+import ticket_api.models  # noqa: F401
 from ticket_api.config import get_settings
 from ticket_api.db.base import Base
 
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # `disable_existing_loggers=False` no es cosmetico: con el default, quien
+    # haya construido sus loggers antes de aplicar migraciones se queda sin
+    # emitir. Pasa en un despliegue que migra al arrancar, y en las pruebas,
+    # donde una suite que corre migraciones apaga los logs de acceso de las
+    # aplicaciones que ya estaban configuradas.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 

@@ -122,6 +122,11 @@ class RequestContextMiddleware:
             status=status_code,
             duration_ms=(time.perf_counter() - started) * 1000,
             request_id=request_id,
+            # Lo deja la dependencia de autorizacion en el estado de la peticion.
+            # Se lee de ahi y no de un contextvar porque las dependencias de
+            # FastAPI pueden ejecutarse en un hilo distinto al del middleware, y
+            # un contextvar cambiado alli no se veria aqui.
+            user_id=state.get("user_id"),
             level="ERROR" if status_code >= 500 else "INFO",
             code=state.get("problem_code"),
         )

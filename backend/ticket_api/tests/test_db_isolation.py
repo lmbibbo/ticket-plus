@@ -30,6 +30,7 @@ from ticket_api.tests.conftest import (
     BASES_PROHIBIDAS,
     SUFIJO_OBLIGATORIO,
     TABLAS_DE_PRUEBA,
+    clave_efimera,
     comprobar_destino,
     url_de_pruebas,
 )
@@ -74,11 +75,32 @@ def test_sin_url_de_pruebas_el_error_es_explicito() -> None:
     # `_env_file=None` evita que se herede el `TEST_DATABASE_URL` del `.env` del
     # repositorio: este caso prueba justamente que falta.
     sin_pruebas = Configuracion(
-        _env_file=None, database_url="postgresql://x@localhost:5432/ticketplus_dev"
+        _env_file=None,
+        database_url="postgresql://x@localhost:5432/ticketplus_dev",
+        jwt_private_key_b64=clave_efimera(),
     )
 
     with pytest.raises(AssertionError, match="TEST_DATABASE_URL no esta definida"):
         url_de_pruebas(sin_pruebas)
+
+
+def test_sin_clave_de_firma_la_aplicacion_no_arranca() -> None:
+    """La clave de Ed25519 es obligatoria y no tiene default.
+
+    Con una clave fija en el codigo, cualquier despliegue comparte firma: un
+    token emitido contra uno valdria en todos, y tras una filtracion no habria
+    forma de rotarla. Que la aplicacion se niegue a arrancar es preferible a
+    arrancar firmando con una clave que no es de nadie.
+    """
+    from pydantic import ValidationError
+
+    from ticket_api.config import Settings as Configuracion
+
+    with pytest.raises(ValidationError, match="jwt_private_key_b64"):
+        # Se omite a proposito el campo requerido para ver que falla.
+        Configuracion(
+            _env_file=None, database_url="postgresql://x@localhost:5432/ticketplus_dev"
+        )
 
 
 def test_conexion_a_postgres_responde(engine: Engine) -> None:

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "_formulario.html" as f %}
+{% block title %}Usuarios - ticket-plus{% endblock %}
+{% block content %}
+<h1>Gestion de usuarios</h1>
+{{ f.aviso(aviso_texto) }}
+{% if pendientes %}
+  <p>Cuentas de proveedor esperando aprobacion:</p>
+  <ul class="pendientes">
+    {% for cuenta in pendientes %}
+    <li>
+      <strong>{{ cuenta.email }}</strong>
+      ({{ cuenta.role }}, {{ cuenta.status }})
+      <form method="post" action="{{ url_for('admin.aprobar', usuario_id=cuenta.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Aprobar</button>
+      </form>
+      <form method="post" action="{{ url_for('admin.suspender', usuario_id=cuenta.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Suspender</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No hay cuentas de proveedor pendientes de aprobacion.</p>
+{% endif %}
+{% endblock %}

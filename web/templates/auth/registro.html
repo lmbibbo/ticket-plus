@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_formulario.html" import aviso, campo %}
+{% block title %}Registrarse - ticket-plus{% endblock %}
+{% block content %}
+<h1>Crear una cuenta</h1>
+{{ aviso(aviso_texto) }}
+<form method="post" action="{{ url_for('auth.registro_enviar') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {{ campo("email", errores, "Correo electronico", tipo="email", autocomplete="username", valor=correo, required=true) }}
+  {{ campo("password", errores, "Contrasena", tipo="password", autocomplete="new-password", required=true) }}
+  {# El selector se escribe a mano y no con `campo` porque es un `select`, no un
+     `input`, y porque su error posible -"ese rol no se puede pedir"- pertenece a la
+     opcion elegida y no a un campo mal escrito. #}
+  <p>
+    <label for="role">Tipo de cuenta</label>
+    <select id="role" name="role">
+      <option value="client" {% if rol != "event-owner" %}selected{% endif %}>Cliente: compro entradas</option>
+      <option value="event-owner" {% if rol == "event-owner" %}selected{% endif %}>Proveedor: vendo entradas de mis eventos</option>
+    </select>
+    {% if errores.get("role") %}
+      <span class="error-campo" id="error-role">{{ errores.get("role") }}</span>
+    {% endif %}
+  </p>
+  <p><button type="submit">Crear cuenta</button></p>
+</form>
+{% endblock %}

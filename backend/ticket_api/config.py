@@ -39,6 +39,29 @@ class Settings(BaseSettings):
         description="Nivel mínimo que llega a la salida estándar.",
     )
 
+    jwt_private_key_b64: str = Field(
+        description="Clave privada Ed25519 de firma, en base64 del DER PKCS#8. "
+        "Obligatoria y sin default: una clave de firma fija en el repositorio "
+        "deja validos todos los tokens que se hayan emitido con ella, y ante una "
+        "filtracion no hay forma de rotarla sin reinvalidar a todo el mundo. Va "
+        "en base64 y no en PEM para que sea una sola linea en `.env`, en un "
+        "secreto de Docker o en una variable de systemd."
+    )
+    access_token_ttl_seconds: int = Field(
+        default=900,
+        ge=30,
+        le=3600,
+        description="Vida del token de acceso. Corta a proposito: mientras dure, "
+        "sigue valiendo aunque se revoque la sesion, asi que cada minuto de mas "
+        "es un minuto de margen para un token robado.",
+    )
+    refresh_token_ttl_seconds: int = Field(
+        default=14 * 24 * 3600,
+        ge=300,
+        description="Vida del refresh token. Se renueva con cada uso, asi que es "
+        "la ventana maxima de inactividad antes de tener que volver a entrar.",
+    )
+
     sql_echo: bool = Field(
         default=False,
         description="Volca el SQL de SQLAlchemy. Nunca debe activarse en produccion: "

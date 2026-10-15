@@ -17,6 +17,7 @@ Reglas que aplica:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Final, Protocol
@@ -26,6 +27,10 @@ import httpx
 from ticket_web.observability.middleware import REQUEST_ID_HEADER, current_request_id
 
 DEFAULT_TIMEOUT_SECONDS: Final = 5.0
+
+#: Clave con la que el cliente de la API se guarda en `app.extensions`, para que
+#: las vistas lo alcancen sin recibirlo por parametro.
+API_CLIENT_KEY: Final = "api_client"
 
 
 class ApiFailure(StrEnum):
@@ -153,6 +158,8 @@ class ApiLike(Protocol):
 
     def post(self, path: str, **kwargs: Any) -> ApiResponse: ...
 
+    def patch(self, path: str, **kwargs: Any) -> ApiResponse: ...
+
     def delete(self, path: str, **kwargs: Any) -> ApiResponse: ...
 
     def close(self) -> None: ...
@@ -167,6 +174,7 @@ class ApiClient:
         *,
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
         transport: httpx.BaseTransport | None = None,
+        auth_headers: Callable[[], dict[str, str]] | None = None,
     ) -> None:
         self._client = httpx.Client(
             base_url=base_url,
@@ -175,6 +183,10 @@ class ApiClient:
             headers={"accept": "application/json"},
             follow_redirects=False,
         )
+        #: Cabeceras de autenticacion, pedidas en cada peticion y no al construir:
+        #: el token de acceso caduca y se renueva mientras el proceso vive, y una
+        #: copia guardada al arranque seria un cliente que envejece en silencio.
+        self._auth_headers: Callable[[], dict[str, str]] = auth_headers or _sin_auth
 
     def close(self) -> None:
         """Cierra el pool de conexiones."""
@@ -208,7 +220,7 @@ class ApiClient:
                 path,
                 json=json,
                 params=params,
-                headers={REQUEST_ID_HEADER: correlation},
+                headers={REQUEST_ID_HEADER: correlation, **self._auth_headers()},
             )
         except httpx.TimeoutException as exc:
             raise ApiUnavailableError(ApiFailure.TIMEOUT) from exc
@@ -230,8 +242,16 @@ class ApiClient:
     def post(self, path: str, **kwargs: Any) -> ApiResponse:
         return self.request("POST", path, **kwargs)
 
+    def patch(self, path: str, **kwargs: Any) -> ApiResponse:
+        return self.request("PATCH", path, **kwargs)
+
     def delete(self, path: str, **kwargs: Any) -> ApiResponse:
         return self.request("DELETE", path, **kwargs)
+
+
+def _sin_auth() -> dict[str, str]:
+    """Sin autenticacion: el cliente construido a mano, y las rutas publicas."""
+    return {}
 
 
 def _decode(raw: httpx.Response) -> Any:

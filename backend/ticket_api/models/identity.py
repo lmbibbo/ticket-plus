@@ -188,6 +188,9 @@ class AuthSession(Base):
     refresh_token_hash: Mapped[str] = mapped_column(String(REFRESH_HASH_MAXIMO), nullable=False)
     #: Identificador compartido por todos los tokens de una misma cadena. Es lo
     #: que hace posible revocar la cadena al detectar una reutilizacion.
+    #: Sin `server_default`, a diferencia de los demas UUID: un valor aleatorio
+    #: puesto por la base dejaria la sesion en una familia propia y la
+    #: reutilizacion pasaria sin detectar. Romper es mejor que fallar en silencio.
     family_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, default=uuid4)
     #: La sesion a la que dio lugar esta. `SET NULL` y no cascade: el borrado de
     #: una sesion no debe arrastrar a la que la sustituyo.

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% import "_formulario.html" as f %}
+{% block title %}{{ evento.name if evento else 'Evento' }} - ticket-plus{% endblock %}
+{% block content %}
+{% if evento is none %}
+  <h1>No se pudo abrir el evento</h1>
+  {{ f.aviso(aviso_texto) }}
+  <p><a href="{{ url_for('owner.eventos') }}">Volver a mis eventos</a></p>
+{% else %}
+  <h1>{{ evento.name }}</h1>
+  <p>
+    <span class="estado-{{ evento.status }}">{{ etiquetas.get(evento.status, evento.status) }}</span>
+  </p>
+  {{ f.aviso(aviso_texto) }}
+  <p><a href="{{ url_for('owner.eventos') }}">Volver a mis eventos</a></p>
+
+  {# El formulario se repuebla con lo que el usuario acaba de escribir si el
+     API veto el envio; si no, con lo que ya guarda el evento. Cada formulario
+     solo mira lo suyo: un fallo del formulario de zona manda `name` de zona,
+     y repoblar con eso el nombre del evento escribiria un dato que nadie
+     escribio. `starts_at` solo viaja en el formulario del evento, y
+     `capacity` solo en el de zona: son la marca que las distingue. #}
+  {% set repintado_evento = form if form.get('starts_at') is not none else {} %}
+  {% set repintado_zona = form if form.get('capacity') is not none else {} %}
+
+  {% if evento.status == 'draft' %}
+  <h2>Editar evento</h2>
+  <form method="post" action="{{ url_for('owner.editar', evento_id=evento.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {{ f.campo('name', errores, 'Nombre', required=true, valor=repintado_evento.get('name', evento.name)) }}
+    {{ f.campo_textarea('description', errores, 'Descripcion', valor=repintado_evento.get('description', evento.description or '')) }}
+    {{ f.campo('starts_at', errores, 'Inicio', tipo='datetime-local', required=true, valor=repintado_evento.get('starts_at', evento.starts_at[:16])) }}
+    {{ f.campo('ends_at', errores, 'Fin', tipo='datetime-local', required=true, valor=repintado_evento.get('ends_at', evento.ends_at[:16])) }}
+    <button type="submit">Guardar cambios</button>
+  </form>
+  {% endif %}
+
+  {% if evento.status == 'draft' %}
+  <form method="post" action="{{ url_for('owner.publicar', evento_id=evento.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">Publicar</button>
+  </form>
+  {% elif evento.status == 'published' %}
+  <form method="post" action="{{ url_for('owner.retirar', evento_id=evento.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">Retirar del catalogo</button>
+  </form>
+  {% endif %}
+
+  <h2>Zonas</h2>
+  {% if evento.zones %}
+  <ul class="zonas">
+    {% for zona in evento.zones %}
+    <li id="zona-{{ zona.id }}">
+      <strong>{{ zona.name }}</strong>
+      — {{ zona.capacity }} entradas a {{ zona.price }}
+
+      <form method="post" action="{{ url_for('owner.editar_zona', evento_id=evento.id, zona_id=zona.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% set en_forma = zona_abierta is not none and zona_abierta|string == zona.id and repintado_zona %}
+        {{ f.campo_prefijado('name', errores_zona if en_forma else {}, 'Nombre de la zona', valor=repintado_zona.get('name', zona.name) if en_forma else zona.name, prefijo='zona-' ~ zona.id, required=true) }}
+        {{ f.campo_prefijado('capacity', errores_zona if en_forma else {}, 'Capacidad', tipo='number', valor=repintado_zona.get('capacity', zona.capacity) if en_forma else zona.capacity, prefijo='zona-' ~ zona.id, required=true) }}
+        {{ f.campo_prefijado('price', errores_zona if en_forma else {}, 'Precio', tipo='number', valor=repintado_zona.get('price', zona.price) if en_forma else zona.price, prefijo='zona-' ~ zona.id, required=true) }}
+        <button type="submit">Guardar zona</button>
+      </form>
+
+      <form method="post" action="{{ url_for('owner.eliminar_zona', evento_id=evento.id, zona_id=zona.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Eliminar zona</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Este evento todavia no tiene zonas. Publicarlo exige al menos una.</p>
+  {% endif %}
+
+  <h3>Agregar zona</h3>
+  <form method="post" action="{{ url_for('owner.crear_zona', evento_id=evento.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% set en_forma = zona_abierta is none and repintado_zona %}
+    {{ f.campo_prefijado('name', errores_zona if en_forma else {}, 'Nombre', valor=repintado_zona.get('name', '') if en_forma else '', prefijo='zona-nueva', required=true) }}
+    {{ f.campo_prefijado('capacity', errores_zona if en_forma else {}, 'Capacidad', tipo='number', valor=repintado_zona.get('capacity', '') if en_forma else '', prefijo='zona-nueva', required=true) }}
+    {{ f.campo_prefijado('price', errores_zona if en_forma else {}, 'Precio', tipo='number', valor=repintado_zona.get('price', '') if en_forma else '', prefijo='zona-nueva', required=true) }}
+    <button type="submit">Agregar zona</button>
+  </form>
+{% endif %}
+{% endblock %}

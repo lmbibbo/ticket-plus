@@ -12,7 +12,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/*" = ["S101"]
+# `S101` (assert) y `S106` (literal usado como contrasena) son el lenguaje de una
+# prueba: comprobar que algo vale es un assert, y una contrasena de prueba tiene
+# que ser un literal o no se estaria probando el formulario sino una variable.
+"**/tests/*" = ["S101", "S106"]
 "backend/alembic/*" = ["E402"]
 
 [tool.mypy]

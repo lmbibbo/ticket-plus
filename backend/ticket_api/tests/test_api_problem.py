@@ -34,7 +34,12 @@ def rutas_negocio(app: FastAPI) -> FastAPI:
     async def crear_orden(compra: _Compra) -> dict[str, str]:
         return {"ok": "1"}
 
-    @router.get("/events/no-publicable")
+    # Fuera del prefijo real de eventos: `GET /api/v1/events/{evento_id}` (7.3)
+    # captura cualquier segmento que no sea un uuid antes de que esta ruta de
+    # prueba llegue a responder, y el resultado seria un 422 de FastAPI en vez
+    # del problema de negocio que aqui se verifica. El camino no es el objeto de
+    # la prueba: lo es la forma del problem+json.
+    @router.get("/publicacion/no-publicable")
     async def evento_no_publicable() -> dict[str, str]:
         raise ProblemException(
             status=409,
@@ -63,7 +68,7 @@ def rutas_negocio(app: FastAPI) -> FastAPI:
 @pytest.mark.parametrize(
     ("ruta", "metodo", "status_esperado", "code_esperado"),
     [
-        ("/api/v1/events/no-publicable", "GET", 409, "event_not_publishable"),
+        ("/api/v1/publicacion/no-publicable", "GET", 409, "event_not_publishable"),
         ("/api/v1/orders/idempotencia", "GET", 409, "idempotency_conflict"),
         ("/api/v1/no-existe", "GET", 404, "not_found"),
     ],

@@ -1,0 +1,97 @@
+{#
+  Piezas de formulario compartidas: login y alta, el alta de eventos del
+  proveedor, y los formularios de zona de una misma pagina.
+
+  El error se pinta debajo del campo que lo produjo y no en una lista arriba. Es
+  la diferencia entre "este correo ya esta registrado" pegado al campo y el mismo
+  texto en un bloque que obliga a ir buscando que campo nombra.
+
+  `aria-describedby` apunta al mensaje y `aria-invalid` marca el campo como
+  invalido, para que un lector de pantalla no se limite a leer el error sin saber
+  a que se refiere.
+
+  `valor` repuebla el campo, y por eso la contrasena nunca lo usa: devolverla en
+  el HTML la escribiria en el historial del navegador y en el DOM, que es donde un
+  formulario que acaba de fallar guarda todo lo demas.
+#}
+
+{% macro aviso(texto) %}
+  {% if texto %}
+    <p class="aviso" role="alert">{{ texto }}</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro campo(campo, errores, etiqueta, tipo="text", autocomplete="", valor="", required=false) %}
+  {% set mensaje = errores.get(campo) %}
+  <p>
+    <label for="{{ campo }}">{{ etiqueta }}</label>
+    <input
+      type="{{ tipo }}"
+      id="{{ campo }}"
+      name="{{ campo }}"
+      {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+      {% if valor %}value="{{ valor }}"{% endif %}
+      {% if required %}required{% endif %}
+      {% if mensaje %}
+        aria-invalid="true"
+        aria-describedby="error-{{ campo }}"
+      {% endif %}
+    >
+    {% if mensaje %}
+      <span class="error-campo" id="error-{{ campo }}">{{ mensaje }}</span>
+    {% endif %}
+  </p>
+{% endmacro %}
+
+{#
+  Igual que `campo`, pero con el id prefijado para formularios que conviven en
+  una misma pagina: dos campos llamados `name` en dos formas distintas no
+  pueden compartir id, y el label de uno apuntaria al input del otro.
+
+  El `name` sigue siendo el campo del API, que es quien nombra los errores.
+#}
+{% macro campo_prefijado(campo, errores, etiqueta, tipo="text", valor="", prefijo="", required=false) %}
+  {% set id = prefijo ~ '-' ~ campo %}
+  {% set mensaje = errores.get(campo) %}
+  <p>
+    <label for="{{ id }}">{{ etiqueta }}</label>
+    <input
+      type="{{ tipo }}"
+      id="{{ id }}"
+      name="{{ campo }}"
+      {% if valor != "" %}value="{{ valor }}"{% endif %}
+      {% if required %}required{% endif %}
+      {% if mensaje %}
+        aria-invalid="true"
+        aria-describedby="error-{{ id }}"
+      {% endif %}
+    >
+    {% if mensaje %}
+      <span class="error-campo" id="error-{{ id }}">{{ mensaje }}</span>
+    {% endif %}
+  </p>
+{% endmacro %}
+
+{#
+  Descripcion del evento: el unico campo largo del formulario. Misma semantica
+  de errores y de repoblado que `campo`; un textarea no puede reutilizar el
+  input porque el contenido va entre las etiquetas, no en un atributo.
+#}
+{% macro campo_textarea(campo, errores, etiqueta, valor="") %}
+  {% set mensaje = errores.get(campo) %}
+  <p>
+    <label for="{{ campo }}">{{ etiqueta }}</label>
+    <textarea
+      id="{{ campo }}"
+      name="{{ campo }}"
+      rows="3"
+      {% if mensaje %}
+        aria-invalid="true"
+        aria-describedby="error-{{ campo }}"
+      {% endif %}
+    >{{ valor }}</textarea>
+    {% if mensaje %}
+      <span class="error-campo" id="error-{{ campo }}">{{ mensaje }}</span>
+    {% endif %}
+  </p>
+{% endmacro %}

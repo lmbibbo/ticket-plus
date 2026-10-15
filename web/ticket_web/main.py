@@ -2,16 +2,30 @@
 
 La web no es un cliente de dominio: renderiza HTML y delega toda operacion en
 FastAPI por HTTP interno. No importa SQLAlchemy ni toca la base de datos.
+
+Aqui solo se ensambla la aplicacion: configuracion, sesion, cliente de la API,
+correlacion de peticiones y traduccion de errores. Las vistas viven en
+`ticket_web.blueprints`.
 """
 
 from __future__ import annotations
 
 from typing import Final
 
-from flask import Flask, Response, jsonify, render_template
+from flask import Flask, Response, jsonify, request
 
-from ticket_web.api_client import ApiClient, ApiLike, ApiProblemError, ApiUnavailableError
+from ticket_web.api_client import (
+    API_CLIENT_KEY,
+    ApiClient,
+    ApiLike,
+    ApiProblemError,
+    ApiUnavailableError,
+)
+from ticket_web.auth import identidad_actual
+from ticket_web.blueprints import register_blueprints
+from ticket_web.blueprints.system import API_PROBE_PATH
 from ticket_web.config import Settings, get_settings
+from ticket_web.csrf import registrar_csrf
 from ticket_web.observability.logging import configure_logging
 from ticket_web.observability.middleware import (
     REQUEST_ID_HEADER,
@@ -19,12 +33,30 @@ from ticket_web.observability.middleware import (
     register_request_context,
     set_problem_code,
 )
+from ticket_web.sesion_api import cabecera_bearer, necesita_renovacion, renovar_sesion
+from ticket_web.session_store import ServerSideSessionInterface
 
-API_CLIENT_KEY: Final = "api_client"
+#: Rutas donde la renovacion no aporta nada: la sesion se va a escribir o a borrar
+#: entera en la propia vista, asi que rotar antes solo gastaria una llamada a la
+#: API. `static` esta porque los estaticos no llevan sesion.
+RUTAS_SIN_RENOVACION: Final = frozenset(
+    {
+        "auth.login_enviar",
+        "auth.registro_enviar",
+        "auth.salir",
+        "static",
+    }
+)
 
-#: Ruta de la API que responde 404 a proposito. La usa la sonda del demo de F1
-#: para comprobar que un `problem+json` llega a la web con su codigo de negocio.
-API_PROBE_PATH: Final = "/api/v1/no-existe"
+#: Atributos de configuracion propios de la web, ajenos a las claves que Flask
+#: ya define por su cuenta.
+APP_CONFIG_KEYS = {
+    "APP_NAME": str,
+    "SESSION_COOKIE_HTTPONLY": bool,
+    "SESSION_COOKIE_SECURE": bool,
+    "SESSION_COOKIE_SAMESITE": str,
+    "SESSION_COOKIE_NAME": str,
+}
 
 
 def create_app(
@@ -41,62 +73,80 @@ def create_app(
         template_folder="../templates",
         static_folder="../static",
     )
-    # La cookie de sesion es opaca y la emite 6.1; todavia no hay contenido que
-    # proteger, pero la configuracion se fija aqui para que el contrato no
-    # cambie cuando se anadan los tokens.
     app.config.update(
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE="Lax",
-        SESSION_COOKIE_NAME="ticketplus_session",
+        APP_NAME=resolved.app_name,
         JSON_SORT_KEYS=False,
         TEMPLATES_AUTO_RELOAD=False,
     )
+    _configure_sessions(app, resolved)
+    _configure_templates(app)
 
     register_request_context(app, app_name=resolved.app_name)
+    registrar_csrf(app)
 
     client = api_client or ApiClient(
         resolved.api_base_url,
         timeout_seconds=resolved.api_timeout_seconds,
+        # La sesion viaja como `Bearer` en cada llamada autenticada. El token
+        # se pide aqui, en cada peticion, y no se guarda al arrancar: caduca y
+        # se renueva con la vida de la sesion, no con la del proceso.
+        auth_headers=cabecera_bearer,
     )
     app.extensions[API_CLIENT_KEY] = client
 
-    @app.get("/health")
-    def health() -> tuple[dict[str, str], int]:
-        """Comprobacion de vida propia de la web, sin depender de la API."""
-        return {"status": "ok", "app": resolved.app_name}, 200
+    register_blueprints(app)
+    _register_session_renewal(app)
+    _register_error_handlers(app)
 
-    @app.get("/")
-    def index() -> str:
-        return render_template("base.html", app_name=resolved.app_name)
+    return app
 
-    @app.get("/api-echo")
-    def api_echo() -> Response:
-        """Sonda de la demo de F1: reenvia a la API y enseña los dos lados de
-        la correlacion.
 
-        `web_request_id` es el identificador de la peticion del navegador y
-        `api_request_id` es el que la API devolvio tras el salto. Que coincidan
-        es la prueba de que el identificador se propago y no se regenero.
-        """
-        response = app.extensions[API_CLIENT_KEY].get("/api/v1/ping")
-        return jsonify(
-            {
-                "web_request_id": current_request_id(),
-                "api_request_id": response.headers.get(REQUEST_ID_HEADER),
-                "api_status": response.status,
-                "api_payload": response.data,
-            }
-        )
+def _register_session_renewal(app: Flask) -> None:
+    """Rota el token de acceso caducado antes de que la peticion llegue a la vista.
 
-    @app.get("/api-probe")
-    def api_probe() -> Response:
-        """Sonda que fuerza un 404 de la API para ver como llega el error.
+    Va en `before_request` y no en cada vista porque el token caduca por tiempo, no
+    por pantalla: un visitante que lleva diez minutos leyendo la pagina tiene un
+    token muerto y no hay ninguna vista concreta a la que culpar. Comprobarlo en
+    un solo sitio es lo que evita que cada una olvide hacerlo.
+    """
 
-        No captura la excepcion a proposito: el manejador registrado abajo la
-        traduce, que es el camino quehara cualquier vista real.
-        """
-        respuesta = app.extensions[API_CLIENT_KEY].get(API_PROBE_PATH)
-        return jsonify({"api_status": respuesta.status, "api_payload": respuesta.data})
+    @app.before_request
+    def _renovar_si_falta() -> None:
+        if request.endpoint in RUTAS_SIN_RENOVACION:
+            return
+        if necesita_renovacion():
+            renovar_sesion()
+
+
+def _configure_sessions(app: Flask, settings: Settings) -> None:
+    """Fija el contrato de la cookie de sesion y el almacen del servidor.
+
+    Los tres atributos los exige la especificacion y se fijan aqui, no en cada
+    vista: `HttpOnly` para que JavaScript no lea la cookie, `Secure` para que no
+    viaje en claro y `SameSite=Lax` para que no se envie desde otro sitio. El
+    identificador opaco lo emite `ServerSideSessionInterface`.
+    """
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=settings.session_cookie_secure,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_NAME="ticketplus_session",
+    )
+    app.session_interface = ServerSideSessionInterface()
+
+
+def _configure_templates(app: Flask) -> None:
+    """Publica en las plantillas lo que la vista necesita sin importar.
+
+    La identidad va como global y no como variable de contexto porque la decision
+    de quien se es de la sesion, no de la vista que se este renderizando. El
+    token CSRF lo publica `registrar_csrf`, que ademas instala su comprobacion.
+    """
+    app.jinja_env.globals["identidad_actual"] = identidad_actual
+
+
+def _register_error_handlers(app: Flask) -> None:
+    """Engancha la traduccion de los fallos de la API a respuestas de la web."""
 
     @app.errorhandler(ApiProblemError)
     def _on_api_problem(exc: ApiProblemError) -> tuple[Response, int]:
@@ -150,7 +200,12 @@ def create_app(
             503,
         )
 
-    return app
 
-
-__all__ = ["API_CLIENT_KEY", "API_PROBE_PATH", "REQUEST_ID_HEADER", "create_app"]
+__all__ = [
+    "API_CLIENT_KEY",
+    "API_PROBE_PATH",
+    "APP_CONFIG_KEYS",
+    "REQUEST_ID_HEADER",
+    "RUTAS_SIN_RENOVACION",
+    "create_app",
+]

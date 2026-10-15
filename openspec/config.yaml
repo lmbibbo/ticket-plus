@@ -2,14 +2,19 @@ schema: spec-driven
 
 context: |
   Tech stack:
-  - Backend API: Python con FastAPI, Pydantic v2, SQLAlchemy 2 y Alembic.
-  - Frontend web: Flask 3 con Jinja2 y HTMX, con renderizado en servidor.
-  - Persistencia: PostgreSQL.
-  - Pruebas: pytest.
-  - El backend y el frontend son aplicaciones separadas.
+  - Backend API: Python with FastAPI, Pydantic v2, SQLAlchemy 2, and Alembic.
+  - Web frontend: Flask 3 with Jinja2 and HTMX, using server-side rendering.
+  - Persistence: PostgreSQL.
+  - Testing: pytest.
+  - The backend and the frontend are separate applications.
+  - Dockerization: Dockerize everything that can be dockerized, for example the database. Prefer containerized services for local development and reproducibility.
   Git workflow:
-  - Cada cambio se desarrolla en una rama `feature/<nombre-del-cambio>`.
-  - No se permiten commits ni push directos a `main`.
+  - Each change is developed on a `feature/<change-name>` branch.
+  - Direct commits or pushes to `main` are not allowed.
+  Language:
+  - The user writes in Spanish; the agent ALWAYS replies in English.
+  - This applies to chat, code comments, commit messages, and any generated
+    artifact (proposal, design, specs, tasks).
 
 rules:
   proposal:
@@ -18,6 +23,19 @@ rules:
     - Use Given/When/Then format for scenarios
   design:
     - Include sequence diagrams for complex flows
+  language:
+    - The user writes in Spanish; the agent MUST always reply in English.
+    - All code, code comments, commit messages, PR descriptions, and OpenSpec
+      artifacts (proposal, design, specs, tasks) MUST be written in English.
+
+operations:
+  archive:
+    guidance:
+      - Run the archive on the current feature branch, never on `main`.
+      - A single commit containing the code, tests, synced specs, and archive.
+      - Run `openspec validate --specs --strict` before committing.
+      - git push -u origin <branch> and then gh pr create --base main.
+      - If the branch already has an open PR, do not create another one.      
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

@@ -64,6 +64,9 @@ def test_fallo_entre_web_y_api_conserva_la_correlacion(
         def post(self, path: str, **_: Any) -> Any:
             raise ApiUnavailableError(ApiFailure.UNREACHABLE)
 
+        def patch(self, path: str, **_: Any) -> Any:
+            raise ApiUnavailableError(ApiFailure.UNREACHABLE)
+
         def delete(self, path: str, **_: Any) -> Any:
             raise ApiUnavailableError(ApiFailure.UNREACHABLE)
 
