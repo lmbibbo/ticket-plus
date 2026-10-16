@@ -53,9 +53,9 @@ gh pr create --base main --head "$BRANCH" || failed
 
 echo
 echo "Espera a que el check \"verify\" pase y a que el PR tenga las aprobaciones necesarias."
-read -r -p "Cuando este listo, presiona S para mergear; presiona N para dejarlo pendiente: " ANSWER
+read -r -p "Cuando este listo, Enter para mergear; N para dejarlo pendiente: " ANSWER
 case "$ANSWER" in
-    [Ss]*) ;;
+    "" | [Ss]*) ;;
     *) echo; echo "PR creado. No se mergeo ni se elimino la rama."; done_ok ;;
 esac
 
