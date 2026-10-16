@@ -1,0 +1,40 @@
+{% set identidad = identidad_actual() %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}ticket-plus{% endblock %}</title>
+    <script src="{{ url_for('static', filename='js/htmx.min.js') }}" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+    <header>
+      <nav aria-label="Navegacion principal">
+        <a href="{{ url_for('system.index') }}">ticket-plus</a>
+        {% if identidad is none %}
+          {# Visitante: solo acceso. Ningun control de gestion, ni siquiera vacio. #}
+          <a href="{{ url_for('auth.login') }}">Iniciar sesion</a>
+          <a href="{{ url_for('auth.registro') }}">Registrarse</a>
+        {% else %}
+          {# Autenticado: primero su area y despues el cierre de sesion. El area
+             que se dibuja es la de su rol, nunca las de los demas. #}
+          {% if identidad.rol == 'client' %}
+            <a href="{{ url_for('account.cuenta') }}">Mi cuenta</a>
+          {% elif identidad.rol == 'event-owner' %}
+            <a href="{{ url_for('owner.eventos') }}">Mis eventos</a>
+          {% elif identidad.rol == 'admin' %}
+            <a href="{{ url_for('admin.usuarios') }}">Usuarios</a>
+          {% endif %}
+          <form method="post" action="{{ url_for('auth.salir') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Cerrar sesion</button>
+          </form>
+        {% endif %}
+      </nav>
+    </header>
+    <main id="contenido">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

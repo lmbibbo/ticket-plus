@@ -94,6 +94,8 @@ Los campos de log se construirán desde una lista permitida. Contraseñas, cooki
 
 ### Estrategia de pruebas
 
+Any suite that touches the database requires a running PostgreSQL. The fixtures do not skip: they fail at setup when `TEST_DATABASE_URL` does not point to a dedicated test database with the `_test` suffix, distinct from the development one. Without that database, the persistence, API, and concurrency suites cannot run, so bringing PostgreSQL up (F0.4) is a precondition for every phase verification.
+
 Pytest tendrá suites separadas para dominio, persistencia, API, Flask e integración:
 
 - pruebas unitarias de autorización, estados, errores e idempotencia;
