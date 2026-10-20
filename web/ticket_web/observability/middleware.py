@@ -14,6 +14,7 @@ import uuid
 from typing import Any, Final
 
 from flask import Flask, Response, g, request
+from werkzeug.exceptions import HTTPException
 
 from ticket_web.observability.logging import (
     get_request_id,
@@ -131,6 +132,48 @@ def register_request_context(app: Flask, *, app_name: str) -> None:
             ),
             500,
             {REQUEST_ID_HEADER: current_request_id()},
+        )
+
+    @app.errorhandler(HTTPException)
+    def _on_http_error(exc: HTTPException) -> tuple[Response, int]:
+        """Keep the real status of HTTP-level errors (404, 405, ...) in a flat body.
+
+        Without this handler the generic `Exception` one swallows every
+        `HTTPException` - Flask resolves handlers walking the exception's MRO -
+        and a missing URL would answer `500 internal_error`, hiding real faults
+        behind false server errors. Redirects (status < 400, raised by
+        `abort(redirect(...))`) pass through untouched so a redirect response is
+        never wrapped in JSON.
+        """
+        from flask import jsonify, make_response
+
+        if exc.code is not None:
+            status = exc.code
+        elif exc.response is not None:
+            status = exc.response.status_code
+        else:
+            status = 500
+        if status < 400:
+            return make_response(exc.get_response(request.environ)), status
+
+        name = exc.name or "Internal Server Error"
+        _log_once(
+            app_name=app_name,
+            response=None,
+            status=status,
+            level="ERROR" if status >= 500 else "INFO",
+        )
+        return (
+            jsonify(
+                {
+                    "code": name.lower().replace(" ", "_"),
+                    "title": name,
+                    "status": status,
+                    "detail": exc.description or name,
+                    "request_id": current_request_id(),
+                }
+            ),
+            status,
         )
 
     @app.teardown_request
