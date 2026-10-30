@@ -31,12 +31,12 @@ case "$BRANCH" in
         ;;
 esac
 
-if [ "$CURRENT_BRANCH" != "main" ]; then
+EXISTING_PR="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)"
+
+if [ "$CURRENT_BRANCH" != "main" ] && [ -z "$EXISTING_PR" ]; then
     echo "Error: ejecuta este script estando en main. Rama actual: ${CURRENT_BRANCH:-desconocida}"
     failed
 fi
-
-EXISTING_PR="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)"
 
 DIRTY_TREE="$(git status --porcelain --untracked-files=all | grep -v "^?? publicar-pr.sh$" || true)"
 if [ -n "$DIRTY_TREE" ]; then
