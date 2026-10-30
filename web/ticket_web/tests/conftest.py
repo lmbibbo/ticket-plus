@@ -31,7 +31,15 @@ from ticket_web.tests.asgi_transport import SyncASGITransport
 
 @pytest.fixture
 def web_settings() -> Settings:
-    return Settings(app_name="web-test", api_base_url="http://api.interno", log_level="WARNING")
+    # Pin every value the tests assert. Otherwise a local `.env` that sets
+    # SESSION_COOKIE_SECURE=false for HTTP development would silently weaken
+    # the cookie contract under test.
+    return Settings(
+        app_name="web-test",
+        api_base_url="http://api.interno",
+        log_level="WARNING",
+        session_cookie_secure=True,
+    )
 
 
 @pytest.fixture(scope="session")

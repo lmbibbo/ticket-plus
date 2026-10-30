@@ -31,7 +31,9 @@ case "$BRANCH" in
         ;;
 esac
 
-if [ "$CURRENT_BRANCH" != "main" ]; then
+EXISTING_PR="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)"
+
+if [ "$CURRENT_BRANCH" != "main" ] && [ -z "$EXISTING_PR" ]; then
     echo "Error: ejecuta este script estando en main. Rama actual: ${CURRENT_BRANCH:-desconocida}"
     failed
 fi
@@ -42,27 +44,41 @@ if [ -n "$DIRTY_TREE" ]; then
     failed
 fi
 
-echo "Creando la rama $BRANCH desde main..."
-git switch -c "$BRANCH" || failed
+if [ -n "$EXISTING_PR" ]; then
+    echo "Reutilizando el pull request #$EXISTING_PR de $BRANCH."
+else
+    echo "Creando la rama $BRANCH desde main..."
+    git switch -c "$BRANCH" || failed
 
-echo "Publicando la rama..."
-git push -u origin "$BRANCH" || failed
+    echo "Publicando la rama..."
+    git push -u origin "$BRANCH" || failed
 
-echo "Creando el pull request contra main..."
-gh pr create --base main --head "$BRANCH" || failed
+    echo "Creando el pull request contra main..."
+    gh pr create --base main --head "$BRANCH" || failed
+fi
 
 echo
-echo "Espera a que el check \"verify\" pase y a que el PR tenga las aprobaciones necesarias."
-read -r -p "Cuando este listo, Enter para mergear; N para dejarlo pendiente: " ANSWER
+echo "Los checks requeridos se esperan automaticamente antes del merge."
+read -r -p "Enter para esperar los checks y mergear; N para dejarlo pendiente: " ANSWER
 case "$ANSWER" in
     "" | [Ss]*) ;;
     *) echo; echo "PR creado. No se mergeo ni se elimino la rama."; done_ok ;;
 esac
 
+echo "Esperando a que los checks del PR terminen (maximo 30 minutos)..."
+if ! timeout 1800 gh pr checks "$BRANCH" --watch --fail-fast; then
+    echo "Error: los checks no pasaron o se agoto el tiempo de espera."
+    failed
+fi
+echo "Todos los checks pasaron."
+
 echo "Cambiando a main..."
 git switch main || failed
 
-PR_NUMBER="$(gh pr view "$BRANCH" --json number --jq .number)"
+PR_NUMBER="${EXISTING_PR:-}"
+if [ -z "$PR_NUMBER" ]; then
+    PR_NUMBER="$(gh pr view "$BRANCH" --json number --jq .number)"
+fi
 [ -n "$PR_NUMBER" ] || failed
 
 echo "Habilitando auto-merge del PR..."
