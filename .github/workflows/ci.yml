@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.6"
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run mypy backend web
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ticketplus_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ticketplus_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.6"
+          enable-cache: true
+      - run: uv sync --frozen
+      # The suite has tests that deliberately construct Settings with
+      # _env_file=None and assert that required values are missing. Exporting
+      # these as job environment variables would make those tests fail, so the
+      # configuration is written to a temporary .env file, as in local runs.
+      - name: Write CI environment
+        run: |
+          KEY="$(uv run --frozen python -c 'from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as K; from cryptography.hazmat.primitives import serialization as s; import base64; print(base64.b64encode(K.generate().private_bytes(s.Encoding.DER, s.PrivateFormat.PKCS8, s.NoEncryption())).decode())')"
+          cat > .env <<EOF
+          DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/ticketplus_test
+          TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/ticketplus_test
+          JWT_PRIVATE_KEY_B64=$KEY
+          SECRET_KEY=ci-only-session-secret
+          SESSION_COOKIE_SECURE=false
+          EOF
+      - run: uv run pytest
+
+  containers:
+    name: containers (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            dockerfile: backend/Dockerfile
+          - name: web
+            dockerfile: web/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: ticket-plus-${{ matrix.name }}:ci
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  smoke:
+    name: smoke
+    runs-on: ubuntu-latest
+    needs: containers
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write CI environment
+        run: |
+          KEY="$(openssl genpkey -algorithm ED25519 -outform DER | base64 -w0)"
+          cat > .env <<EOF
+          DATABASE_URL=postgresql+psycopg://postgres:ci-postgres@localhost:5432/ticketplus_dev
+          TEST_DATABASE_URL=postgresql+psycopg://postgres:ci-postgres@localhost:5432/ticketplus_test
+          JWT_PRIVATE_KEY_B64=$KEY
+          API_BASE_URL=http://127.0.0.1:8000
+          SECRET_KEY=ci-only-session-secret
+          SESSION_COOKIE_SECURE=false
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=ci-postgres
+          POSTGRES_DB=ticketplus_dev
+          EOF
+      - name: Start stack
+        run: docker compose up -d --build --wait --wait-timeout 240
+      - name: Probe health endpoints
+        run: |
+          curl -fsS http://127.0.0.1:8000/health
+          curl -fsS http://127.0.0.1:5000/health
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
