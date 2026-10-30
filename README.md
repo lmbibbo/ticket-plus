@@ -132,14 +132,22 @@ introduced.
 
 ## Continuous integration
 
-GitHub Actions runs the quality, test, container build, and compose smoke jobs on
-every pull request and on every push to `main`. The required checks on `main` are:
+GitHub Actions runs `.github/workflows/ci.yml` on every pull request and on every
+push to `main`. A concurrency group cancels superseded runs for the same ref.
 
-- `quality`
-- `tests`
-- `containers (backend)`
-- `containers (web)`
-- `smoke`
+| Job | What it does |
+| --- | --- |
+| `quality` | `uv sync --frozen`, `ruff check .`, and `mypy backend web` |
+| `tests` | full pytest suite against a `postgres:16` service |
+| `containers (backend)` | buildx build of `backend/Dockerfile`, no push |
+| `containers (web)` | buildx build of `web/Dockerfile`, no push |
+| `smoke` | `docker compose up -d --build --wait`, then probes both `/health` endpoints |
 
-A failing check blocks the merge. `publicar-pr.sh` waits for the checks before
-merging.
+The required checks on `main` are `quality`, `tests`, `containers (backend)`,
+`containers (web)`, and `smoke`. Those are the exact check names the workflow
+reports, so branch protection can list them without ambiguity.
+
+A failing required check blocks the merge; a pull request with all five checks
+green is eligible to merge. `publicar-pr.sh` waits up to 30 minutes on
+`gh pr checks --watch` and stops before merging if a check fails or the wait times
+out.

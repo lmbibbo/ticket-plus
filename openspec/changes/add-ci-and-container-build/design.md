@@ -96,11 +96,12 @@ concern add files without adding signal.
 
 ### D3. PostgreSQL service and CI environment
 
-The test job uses a `postgres:16` service with a `pg_isready` health check and a
-database named `ticketplus_test`. It exports:
+The test job uses a `postgres:16` service with a `pg_isready` health check. The
+service creates `ticketplus_dev`, and a workflow step creates `ticketplus_test`.
+It exports:
 
 ```
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/ticketplus_test
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/ticketplus_dev
 TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/ticketplus_test
 JWT_PRIVATE_KEY_B64=<generated per run>
 SECRET_KEY=<test-only value>
@@ -108,9 +109,10 @@ SECRET_KEY=<test-only value>
 
 `JWT_PRIVATE_KEY_B64` is generated in a workflow step with the same Python
 snippet documented for developers, so no signing key is committed and every run
-uses a fresh one. Both DSNs point at the `_test` database because `Settings`
-requires `DATABASE_URL` even when the suite overrides the session factory, and
-the guard rejects names without the suffix. No SQLite fallback is introduced.
+uses a fresh one. `Settings` requires `DATABASE_URL` even when the suite overrides
+the session factory, and the guard rejects names without the `_test` suffix and
+names equal to the development database, so the two DSNs must differ. No SQLite
+fallback is introduced.
 
 The `concurrency` marker already exists in `pyproject.toml`; once F5 adds those
 tests, the test job runs the whole suite, including the marked tests, against the

@@ -52,12 +52,19 @@ echo "Creando el pull request contra main..."
 gh pr create --base main --head "$BRANCH" || failed
 
 echo
-echo "Espera a que el check \"verify\" pase y a que el PR tenga las aprobaciones necesarias."
-read -r -p "Cuando este listo, Enter para mergear; N para dejarlo pendiente: " ANSWER
+echo "Los checks requeridos se esperan automaticamente antes del merge."
+read -r -p "Enter para esperar los checks y mergear; N para dejarlo pendiente: " ANSWER
 case "$ANSWER" in
     "" | [Ss]*) ;;
     *) echo; echo "PR creado. No se mergeo ni se elimino la rama."; done_ok ;;
 esac
+
+echo "Esperando a que los checks del PR terminen (maximo 30 minutos)..."
+if ! timeout 1800 gh pr checks "$BRANCH" --watch --fail-fast; then
+    echo "Error: los checks no pasaron o se agoto el tiempo de espera."
+    failed
+fi
+echo "Todos los checks pasaron."
 
 echo "Cambiando a main..."
 git switch main || failed
