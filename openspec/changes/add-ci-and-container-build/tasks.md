@@ -6,13 +6,13 @@ is intentionally excluded and will be a separate change.
 
 ## 1. Reproducible install
 
-- [ ] 1.1 Create the branch `feature/add-ci-and-container-build` from `main` and verify with `git branch --show-current` that it is active and `git status --porcelain` is empty
-- [ ] 1.2 Install `uv` locally with the official installer and verify `uv --version` succeeds; record the version in `README.md`
-- [ ] 1.3 Add `[project]` to `pyproject.toml` with name, version, `requires-python = ">=3.12"`, and the runtime dependencies pinned to the versions currently installed in `.venv` (FastAPI, Uvicorn, Pydantic, pydantic-settings, SQLAlchemy, Alembic, psycopg binary, Flask, Jinja2, Werkzeug, itsdangerous, PyJWT, cryptography, argon2-cffi, email-validator, python-dotenv); verify `uv lock` resolves and `uv sync --frozen` installs them
-- [ ] 1.4 Add `[dependency-groups]` with the dev tools (`pytest`, `ruff`, `mypy`, `httpx`) and `[tool.uv] package = false`; verify `uv run python -c "import pytest, ruff, mypy, httpx"` succeeds
-- [ ] 1.5 Add `gunicorn` as a runtime dependency for the web image and verify the lockfile updates and `uv run python -c "import gunicorn"` succeeds
-- [ ] 1.6 Recreate the environment from the lockfile only (remove `.venv` or use a temporary `UV_PROJECT_ENVIRONMENT`) and verify `uv sync --frozen`, `uv run ruff check .`, `uv run mypy backend web`, and `uv run pytest` all pass with the current test count
-- [ ] 1.7 Document the install, test, environment-variable, and JWT-key-generation commands in `README.md` and verify each command runs exactly as written
+- [x] 1.1 Create the branch `feature/add-ci-and-container-build` from `main` and verify with `git branch --show-current` that it is active and `git status --porcelain` is empty
+- [x] 1.2 Install `uv` locally with the official installer and verify `uv --version` succeeds; record the version in `README.md`
+- [x] 1.3 Add `[project]` to `pyproject.toml` with name, version, `requires-python = ">=3.12"`, and the runtime dependencies pinned to the versions currently installed in `.venv` (FastAPI, Uvicorn, Pydantic, pydantic-settings, SQLAlchemy, Alembic, psycopg binary, Flask, Jinja2, Werkzeug, itsdangerous, PyJWT, cryptography, argon2-cffi, email-validator, python-dotenv); verify `uv lock` resolves and `uv sync --frozen` installs them
+- [x] 1.4 Add `[dependency-groups]` with the dev tools (`pytest`, `ruff`, `mypy`, `httpx`) and `[tool.uv] package = false`; verify `uv run python -c "import pytest, ruff, mypy, httpx"` succeeds
+- [x] 1.5 Add `gunicorn` as a runtime dependency for the web image and verify the lockfile updates and `uv run python -c "import gunicorn"` succeeds
+- [x] 1.6 Recreate the environment from the lockfile only (remove `.venv` or use a temporary `UV_PROJECT_ENVIRONMENT`) and verify `uv sync --frozen`, `uv run ruff check .`, `uv run mypy backend web`, and `uv run pytest` all pass with the current test count
+- [x] 1.7 Document the install, test, environment-variable, and JWT-key-generation commands in `README.md` and verify each command runs exactly as written
 
 ## 2. Continuous integration
 
@@ -40,7 +40,7 @@ is intentionally excluded and will be a separate change.
 - [ ] 4.1 Add `docker/init/01-create-test-db.sql` that creates the development database and the `ticketplus_test` database, and verify both exist after a fresh volume initialization
 - [ ] 4.2 Add `compose.yaml` with `db`, `backend`, and `web` services, the named volume `ticket-plus-pgdata`, `env_file`, health checks, and `depends_on` conditions; verify `docker compose config` resolves without errors
 - [ ] 4.3 Implement the backend entrypoint that runs `alembic -c backend/alembic.ini upgrade head` before starting uvicorn, and verify `alembic current` reports the head revision after startup
-- [ ] 4.4 Add `.env.example` with every variable required by both `Settings` classes, placeholder values only, and the JWT-key generation command; verify every key documented in the example exists in the configuration and no real secret is present
+- [x] 4.4 Add `.env.example` with every variable required by both `Settings` classes, placeholder values only, and the JWT-key generation command; verify every key documented in the example exists in the configuration and no real secret is present
 - [ ] 4.5 Stop and remove the ad hoc `ticket-plus-postgres` container while preserving the `ticket-plus-pgdata` volume, start the compose stack, and verify both `/health` endpoints respond and the web entry point loads
 - [ ] 4.6 Verify test-database isolation by running the full suite against the compose database and confirming the development database is not modified
 - [ ] 4.7 Verify restart idempotence by restarting the backend and running `docker compose up` again, confirming migrations are safe to repeat and no data is lost; confirm `docker compose down` preserves the volume
