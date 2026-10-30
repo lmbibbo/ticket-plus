@@ -36,20 +36,26 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
     failed
 fi
 
+EXISTING_PR="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)"
+
 DIRTY_TREE="$(git status --porcelain --untracked-files=all | grep -v "^?? publicar-pr.sh$" || true)"
 if [ -n "$DIRTY_TREE" ]; then
     echo "Error: hay cambios sin commit. Guarda o descarta los cambios antes de continuar."
     failed
 fi
 
-echo "Creando la rama $BRANCH desde main..."
-git switch -c "$BRANCH" || failed
+if [ -n "$EXISTING_PR" ]; then
+    echo "Reutilizando el pull request #$EXISTING_PR de $BRANCH."
+else
+    echo "Creando la rama $BRANCH desde main..."
+    git switch -c "$BRANCH" || failed
 
-echo "Publicando la rama..."
-git push -u origin "$BRANCH" || failed
+    echo "Publicando la rama..."
+    git push -u origin "$BRANCH" || failed
 
-echo "Creando el pull request contra main..."
-gh pr create --base main --head "$BRANCH" || failed
+    echo "Creando el pull request contra main..."
+    gh pr create --base main --head "$BRANCH" || failed
+fi
 
 echo
 echo "Los checks requeridos se esperan automaticamente antes del merge."
@@ -69,7 +75,10 @@ echo "Todos los checks pasaron."
 echo "Cambiando a main..."
 git switch main || failed
 
-PR_NUMBER="$(gh pr view "$BRANCH" --json number --jq .number)"
+PR_NUMBER="${EXISTING_PR:-}"
+if [ -z "$PR_NUMBER" ]; then
+    PR_NUMBER="$(gh pr view "$BRANCH" --json number --jq .number)"
+fi
 [ -n "$PR_NUMBER" ] || failed
 
 echo "Habilitando auto-merge del PR..."

@@ -48,10 +48,10 @@ is intentionally excluded and will be a separate change.
 
 ## 5. Integration and rollback
 
-- [ ] 5.1 Run the full suite locally with `uv run pytest` against the compose PostgreSQL instance and verify the current test count passes
-- [ ] 5.2 Run `uv run ruff check .` and `uv run mypy backend web` and verify both report no issues
-- [ ] 5.3 Run the compose smoke flow exactly as the CI job does (`docker compose up -d --build --wait`, probe both health endpoints, `docker compose down`) and verify it matches the pipeline result
-- [ ] 5.4 Rehearse the rollback on a scratch copy or scratch branch: disable the required checks, remove the workflow and compose files, and verify the applications still run with the previous virtual environment and the existing database volume
-- [ ] 5.5 Run `openspec validate --specs --strict` and `openspec validate add-ci-and-container-build --strict` and verify both pass
-- [ ] 5.6 Scan the tracked tree for secret material (`git grep` for key and password patterns) and verify `.env` is untracked and only placeholders appear in `.env.example`
+- [x] 5.1 Run the full suite locally with `uv run pytest` against the compose PostgreSQL instance and verify the current test count passes
+- [x] 5.2 Run `uv run ruff check .` and `uv run mypy backend web` and verify both report no issues
+- [x] 5.3 Run the compose smoke flow exactly as the CI job does (`docker compose up -d --build --wait`, probe both health endpoints, `docker compose down`) and verify it matches the pipeline result
+- [x] 5.4 Rehearse the rollback on a scratch copy or scratch branch: disable the required checks, remove the workflow and compose files, and verify the applications still run with the previous virtual environment and the existing database volume
+- [x] 5.5 Run `openspec validate --specs --strict` and `openspec validate add-ci-and-container-build --strict` and verify both pass
+- [x] 5.6 Scan the tracked tree for secret material (`git grep` for key and password patterns) and verify `.env` is untracked and only placeholders appear in `.env.example`
 - [ ] 5.7 Open the pull request, wait for every required check to pass, merge through `publicar-pr.sh`, delete the branch, and verify `main` still enforces the protection rule
