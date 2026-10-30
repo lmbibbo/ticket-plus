@@ -59,19 +59,71 @@ The compose topology starts PostgreSQL, the backend, and the web application.
 See `compose.yaml` for the service definitions and `docker/init/` for the
 database initialization script.
 
+Start the whole stack:
+
 ```bash
 docker compose up -d --build --wait
 ```
+
+The backend container runs `alembic -c backend/alembic.ini upgrade head` before
+starting uvicorn, so the schema is current after every start. The command is
+idempotent: restarting the container or running `docker compose up` again does
+not reapply an already applied migration.
 
 Health endpoints:
 
 - Backend: <http://127.0.0.1:8000/health>
 - Web: <http://127.0.0.1:5000/health>
 
-Stop the stack without deleting the database volume:
+### Migrating from the old ad hoc container
+
+Earlier setups used a standalone `ticket-plus-postgres` container. Stop and
+remove that container, but keep its `ticket-plus-pgdata` volume; compose declares
+the same volume and reuses the existing data:
 
 ```bash
-docker compose down
+docker stop ticket-plus-postgres
+docker rm ticket-plus-postgres
+docker compose up -d --build --wait
+```
+
+Do not run `docker compose down -v` during this migration: that flag deletes the
+volume and the data with it.
+
+### Local HTTP cookies
+
+Compose runs the web application over plain HTTP and sets
+`SESSION_COOKIE_SECURE=false` for that reason. Keep the same value in `.env` when
+you run the web application directly on the host. Production deployments must
+serve HTTPS and set `SESSION_COOKIE_SECURE=true`; otherwise the session cookie is
+never sent by the browser.
+
+### Stopping the stack
+
+`docker compose down` stops and removes the containers and the network but keeps
+the `ticket-plus-pgdata` volume, so the database survives and the next
+`docker compose up` reuses it. `docker compose down -v` also deletes the volume
+and all data; use it only when you want a clean database.
+
+### Building and running images individually
+
+Build the images when you need to inspect them:
+
+```bash
+docker build -f backend/Dockerfile -t ticket-plus-backend:local .
+docker build -f web/Dockerfile -t ticket-plus-web:local .
+```
+
+Run an image against a PostgreSQL instance reachable from the host (the
+`--network host` flag makes the `localhost` DSN in `.env` work):
+
+```bash
+docker run --rm --network host --env-file .env ticket-plus-backend:local
+docker run --rm --network host --env-file .env \
+  -e API_BASE_URL=http://127.0.0.1:8000 \
+  -e SECRET_KEY=change-me \
+  -e SESSION_COOKIE_SECURE=false \
+  ticket-plus-web:local
 ```
 
 The web container runs gunicorn with a single worker because sessions are stored

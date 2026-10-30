@@ -52,9 +52,10 @@ See `proposal.md` for motivation. The current state that shapes this design:
 ### D1. uv with PEP 621 metadata and a committed lockfile
 
 `pyproject.toml` gains a `[project]` table with the runtime dependencies already
-present in `.venv`, a `[dependency-groups]` dev group with pytest, Ruff, mypy,
-and httpx, and `[tool.uv] package = false` because the applications are not
-installed packages (pytest resolves them through `pythonpath`).
+present in `.venv`, a `[dependency-groups]` dev group with pytest, Ruff, and mypy,
+and `[tool.uv] package = false` because the applications are not installed
+packages (pytest resolves them through `pythonpath`). `httpx` is a runtime
+dependency: the web application uses it to call the API, not only the tests.
 
 The lockfile is generated once from the current environment and committed.
 Every install uses frozen mode:

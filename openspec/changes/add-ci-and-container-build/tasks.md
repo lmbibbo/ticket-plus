@@ -9,7 +9,7 @@ is intentionally excluded and will be a separate change.
 - [x] 1.1 Create the branch `feature/add-ci-and-container-build` from `main` and verify with `git branch --show-current` that it is active and `git status --porcelain` is empty
 - [x] 1.2 Install `uv` locally with the official installer and verify `uv --version` succeeds; record the version in `README.md`
 - [x] 1.3 Add `[project]` to `pyproject.toml` with name, version, `requires-python = ">=3.12"`, and the runtime dependencies pinned to the versions currently installed in `.venv` (FastAPI, Uvicorn, Pydantic, pydantic-settings, SQLAlchemy, Alembic, psycopg binary, Flask, Jinja2, Werkzeug, itsdangerous, PyJWT, cryptography, argon2-cffi, email-validator, python-dotenv); verify `uv lock` resolves and `uv sync --frozen` installs them
-- [x] 1.4 Add `[dependency-groups]` with the dev tools (`pytest`, `ruff`, `mypy`, `httpx`) and `[tool.uv] package = false`; verify `uv run python -c "import pytest, ruff, mypy, httpx"` succeeds
+- [x] 1.4 Add `[dependency-groups]` with the dev tools (`pytest`, `ruff`, `mypy`) and `[tool.uv] package = false`; verify `uv run python -c "import pytest, ruff, mypy, httpx"` succeeds
 - [x] 1.5 Add `gunicorn` as a runtime dependency for the web image and verify the lockfile updates and `uv run python -c "import gunicorn"` succeeds
 - [x] 1.6 Recreate the environment from the lockfile only (remove `.venv` or use a temporary `UV_PROJECT_ENVIRONMENT`) and verify `uv sync --frozen`, `uv run ruff check .`, `uv run mypy backend web`, and `uv run pytest` all pass with the current test count
 - [x] 1.7 Document the install, test, environment-variable, and JWT-key-generation commands in `README.md` and verify each command runs exactly as written
@@ -28,23 +28,23 @@ is intentionally excluded and will be a separate change.
 
 ## 3. Container images
 
-- [ ] 3.1 Add `.dockerignore` excluding `.git`, `.venv`, `.env`, `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, and `openspec`; verify the build context no longer contains those paths
-- [ ] 3.2 Add `backend/Dockerfile` as a multi-stage build using `python:3.12-slim` and a pinned uv binary, installing runtime dependencies with `uv sync --frozen --no-dev`, running as a non-root user, and starting `uvicorn --factory ticket_api.main:create_app`; verify the image builds and `/health` responds
-- [ ] 3.3 Add `web/wsgi.py` exposing `app = create_app()` and `web/Dockerfile` as a multi-stage build that runs gunicorn with one worker and configurable threads; verify the image builds, the process runs as non-root, and `/health` responds
-- [ ] 3.4 Add a `HEALTHCHECK` to both images using Python's standard library instead of curl, and verify `docker inspect` reports the health check and the container reaches the healthy state
-- [ ] 3.5 Verify no secret material is embedded by inspecting `docker history --no-trunc` and the runtime environment of both images, and confirm neither image contains `.env`, `.git`, `.venv`, or test credentials
-- [ ] 3.6 Document the image build and run commands, the single-worker web constraint, and the health endpoints in `README.md`; verify each documented command runs as written
+- [x] 3.1 Add `.dockerignore` excluding `.git`, `.venv`, `.env`, `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, and `openspec`; verify the build context no longer contains those paths
+- [x] 3.2 Add `backend/Dockerfile` as a multi-stage build using `python:3.12-slim` and a pinned uv binary, installing runtime dependencies with `uv sync --frozen --no-dev`, running as a non-root user, and starting `uvicorn --factory ticket_api.main:create_app`; verify the image builds and `/health` responds
+- [x] 3.3 Add `web/wsgi.py` exposing `app = create_app()` and `web/Dockerfile` as a multi-stage build that runs gunicorn with one worker and configurable threads; verify the image builds, the process runs as non-root, and `/health` responds
+- [x] 3.4 Add a `HEALTHCHECK` to both images using Python's standard library instead of curl, and verify `docker inspect` reports the health check and the container reaches the healthy state
+- [x] 3.5 Verify no secret material is embedded by inspecting `docker history --no-trunc` and the runtime environment of both images, and confirm neither image contains `.env`, `.git`, the host `.venv` checkout, or test credentials; the runtime virtual environment at `/app/.venv` is expected
+- [x] 3.6 Document the image build and run commands, the single-worker web constraint, and the health endpoints in `README.md`; verify each documented command runs as written
 
 ## 4. Compose topology
 
-- [ ] 4.1 Add `docker/init/01-create-test-db.sql` that creates the development database and the `ticketplus_test` database, and verify both exist after a fresh volume initialization
-- [ ] 4.2 Add `compose.yaml` with `db`, `backend`, and `web` services, the named volume `ticket-plus-pgdata`, `env_file`, health checks, and `depends_on` conditions; verify `docker compose config` resolves without errors
-- [ ] 4.3 Implement the backend entrypoint that runs `alembic -c backend/alembic.ini upgrade head` before starting uvicorn, and verify `alembic current` reports the head revision after startup
+- [x] 4.1 Add `docker/init/01-create-test-db.sql` that creates the development database and the `ticketplus_test` database, and verify both exist after a fresh volume initialization
+- [x] 4.2 Add `compose.yaml` with `db`, `backend`, and `web` services, the named volume `ticket-plus-pgdata`, `env_file`, health checks, and `depends_on` conditions; verify `docker compose config` resolves without errors
+- [x] 4.3 Implement the backend entrypoint that runs `alembic -c backend/alembic.ini upgrade head` before starting uvicorn, and verify `alembic current` reports the head revision after startup
 - [x] 4.4 Add `.env.example` with every variable required by both `Settings` classes, placeholder values only, and the JWT-key generation command; verify every key documented in the example exists in the configuration and no real secret is present
-- [ ] 4.5 Stop and remove the ad hoc `ticket-plus-postgres` container while preserving the `ticket-plus-pgdata` volume, start the compose stack, and verify both `/health` endpoints respond and the web entry point loads
-- [ ] 4.6 Verify test-database isolation by running the full suite against the compose database and confirming the development database is not modified
-- [ ] 4.7 Verify restart idempotence by restarting the backend and running `docker compose up` again, confirming migrations are safe to repeat and no data is lost; confirm `docker compose down` preserves the volume
-- [ ] 4.8 Document the compose workflow, the existing-container migration step, the local `SESSION_COOKIE_SECURE=false` requirement, and the data-preserving `down` behavior in `README.md`; verify the documented commands run as written
+- [x] 4.5 Stop and remove the ad hoc `ticket-plus-postgres` container while preserving the `ticket-plus-pgdata` volume, start the compose stack, and verify both `/health` endpoints respond and the web entry point loads
+- [x] 4.6 Verify test-database isolation by running the full suite against the compose database and confirming the development database is not modified
+- [x] 4.7 Verify restart idempotence by restarting the backend and running `docker compose up` again, confirming migrations are safe to repeat and no data is lost; confirm `docker compose down` preserves the volume
+- [x] 4.8 Document the compose workflow, the existing-container migration step, the local `SESSION_COOKIE_SECURE=false` requirement, and the data-preserving `down` behavior in `README.md`; verify the documented commands run as written
 
 ## 5. Integration and rollback
 
