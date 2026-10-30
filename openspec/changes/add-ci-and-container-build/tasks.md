@@ -16,15 +16,15 @@ is intentionally excluded and will be a separate change.
 
 ## 2. Continuous integration
 
-- [ ] 2.1 Add `.github/workflows/ci.yml` with `pull_request` and `push` to `main` triggers, a per-ref `concurrency` group with `cancel-in-progress`, and read-only permissions; verify on GitHub that the workflow appears and starts on a push to the branch
-- [ ] 2.2 Implement the `quality` job with uv setup, `uv sync --frozen`, `uv run ruff check .`, and `uv run mypy backend web`; verify the job is green on the branch
-- [ ] 2.3 Implement the `tests` job with a `postgres:16` service, a `pg_isready` health check, `DATABASE_URL` and `TEST_DATABASE_URL` pointing at a database whose name ends in `_test`, a per-run generated `JWT_PRIVATE_KEY_B64`, and `uv run pytest`; verify the job is green and the suite runs against PostgreSQL rather than SQLite
-- [ ] 2.4 Implement the `containers` matrix job that builds the backend and web images with buildx and the GitHub Actions cache, with `push: false`; verify both `containers (backend)` and `containers (web)` checks appear and pass
-- [ ] 2.5 Implement the `smoke` job that runs `docker compose up -d --build --wait`, probes `/health` on the backend and the web app, prints `docker compose logs` on failure, and always runs `docker compose down`; verify the job is green and fails when a health probe is forced to fail
-- [ ] 2.6 Verify the red path on a draft pull request by temporarily breaking one test, confirming the required checks fail and the merge is blocked, then reverting the break and confirming green checks allow the merge
-- [ ] 2.7 Apply branch protection to `main` with the GitHub API using the four check contexts, and verify with `gh api repos/lmbibbo/ticket-plus/branches/main/protection` that the contexts are listed and a failing pull request cannot merge
-- [ ] 2.8 Update `publicar-pr.sh` to wait on `gh pr checks --watch` before merging and to use a timeout longer than the current ten minutes; verify it waits for a green pipeline instead of merging immediately
-- [ ] 2.9 Document the CI jobs, required checks, and the red/green merge behavior in `README.md` and verify the documented check names match the workflow
+- [x] 2.1 Add `.github/workflows/ci.yml` with `pull_request` and `push` to `main` triggers, a per-ref `concurrency` group with `cancel-in-progress`, and read-only permissions; verify on GitHub that the workflow appears and starts on a push to the branch
+- [x] 2.2 Implement the `quality` job with uv setup, `uv sync --frozen`, `uv run ruff check .`, and `uv run mypy backend web`; verify the job is green on the branch
+- [x] 2.3 Implement the `tests` job with a `postgres:16` service, a `pg_isready` health check, `DATABASE_URL` and `TEST_DATABASE_URL` pointing at a database whose name ends in `_test`, a per-run generated `JWT_PRIVATE_KEY_B64`, and `uv run pytest`; verify the job is green and the suite runs against PostgreSQL rather than SQLite
+- [x] 2.4 Implement the `containers` matrix job that builds the backend and web images with buildx and the GitHub Actions cache, with `push: false`; verify both `containers (backend)` and `containers (web)` checks appear and pass
+- [x] 2.5 Implement the `smoke` job that runs `docker compose up -d --build --wait`, probes `/health` on the backend and the web app, prints `docker compose logs` on failure, and always runs `docker compose down`; verify the job is green and fails when a health probe is forced to fail
+- [x] 2.6 Verify the red path on a draft pull request by temporarily breaking one test, confirming the required checks fail and the merge is blocked, then reverting the break and confirming green checks allow the merge
+- [x] 2.7 Apply branch protection to `main` with the GitHub API using the four check contexts, and verify with `gh api repos/lmbibbo/ticket-plus/branches/main/protection` that the contexts are listed and a failing pull request cannot merge
+- [x] 2.8 Update `publicar-pr.sh` to wait on `gh pr checks --watch` before merging and to use a timeout longer than the current ten minutes; verify it waits for a green pipeline instead of merging immediately
+- [x] 2.9 Document the CI jobs, required checks, and the red/green merge behavior in `README.md` and verify the documented check names match the workflow
 
 ## 3. Container images
 
